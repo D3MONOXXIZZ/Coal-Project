@@ -28,4 +28,17 @@ BulletX db BulletCount dup (0)      ; Array: Bullet X positions
 BulletY db BulletCount dup (0)      ; Array: Bullet Y positions
 PrevBulletActive db BulletCount dup (0) ; For erasing old frames (anti-flicker)
 PrevBulletX db BulletCount dup (0)
-PrevBulletY db BulletCount dup (0) 
+PrevBulletY db BulletCount dup (0)                            
+
+;; --- Enemy Variables ---
+EnemyRows equ 5         ; 5 rows of enemies
+EnemyCols equ 11        ; 11 columns of enemies
+EnemyCount equ EnemyRows*EnemyCols ; Total 55 enemies
+EnemyAlive db EnemyCount dup (0)   ; Array: 1 if alive, 0 if destroyed
+EnemyX db EnemyCount dup (0)       ; Array: Enemy X positions
+EnemyY db EnemyCount dup (0)       ; Array: Enemy Y positions
+PrevEnemyAlive db EnemyCount dup (0) ; For erasing old frames (anti-flicker)
+PrevEnemyX db EnemyCount dup (0)
+PrevEnemyY db EnemyCount dup (0)
+
+PrevPlayerX db 40       ; For erasing old player position
