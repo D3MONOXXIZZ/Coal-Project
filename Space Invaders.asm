@@ -41,4 +41,18 @@ PrevEnemyAlive db EnemyCount dup (0) ; For erasing old frames (anti-flicker)
 PrevEnemyX db EnemyCount dup (0)
 PrevEnemyY db EnemyCount dup (0)
 
-PrevPlayerX db 40       ; For erasing old player position
+PrevPlayerX db 40       ; For erasing old player position    
+
+
+
+;; --- Graphics & Strings ---
+EnemySpriteW equ 3      ; Enemy width is 3 characters
+EnemySprite0 db '/', 'X', '\' ; Animation frame 1
+EnemySprite1 db '\', 'X', '/' ; Animation frame 2
+
+HudScore db 'SCORE:',0
+HudQuit db 'ESC:QUIT  R:RESTART',0
+
+MsgWin db 'YOU WIN!',0
+MsgGameOver db 'GAME OVER',0
+MsgPrompt db 'R=RESTART  ESC=QUIT',0
