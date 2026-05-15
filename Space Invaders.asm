@@ -20,3 +20,12 @@ EnemyAnim db 0          ; Enemy animation frame (0 or 1)
 
 Score dw 0              ; Current player score
 PrevScore dw 0          ; Used to check if the score needs to be redrawn
+
+;; --- Bullet Variables ---
+BulletCount equ 5       ; Max number of bullets on screen at once
+BulletActive db BulletCount dup (0) ; Array: 1 if bullet is active, 0 if free
+BulletX db BulletCount dup (0)      ; Array: Bullet X positions
+BulletY db BulletCount dup (0)      ; Array: Bullet Y positions
+PrevBulletActive db BulletCount dup (0) ; For erasing old frames (anti-flicker)
+PrevBulletX db BulletCount dup (0)
+PrevBulletY db BulletCount dup (0) 
