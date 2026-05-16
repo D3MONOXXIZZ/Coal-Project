@@ -28,7 +28,7 @@ BulletX db BulletCount dup (0)      ; Array: Bullet X positions
 BulletY db BulletCount dup (0)      ; Array: Bullet Y positions
 PrevBulletActive db BulletCount dup (0) ; For erasing old frames (anti-flicker)
 PrevBulletX db BulletCount dup (0)
-PrevBulletY db BulletCount dup (0)                            
+PrevBulletY db BulletCount dup (0)
 
 ;; --- Enemy Variables ---
 EnemyRows equ 5         ; 5 rows of enemies
@@ -41,9 +41,7 @@ PrevEnemyAlive db EnemyCount dup (0) ; For erasing old frames (anti-flicker)
 PrevEnemyX db EnemyCount dup (0)
 PrevEnemyY db EnemyCount dup (0)
 
-PrevPlayerX db 40       ; For erasing old player position    
-
-
+PrevPlayerX db 40       ; For erasing old player position
 
 ;; --- Graphics & Strings ---
 EnemySpriteW equ 3      ; Enemy width is 3 characters
@@ -55,7 +53,7 @@ HudQuit db 'ESC:QUIT  R:RESTART',0
 
 MsgWin db 'YOU WIN!',0
 MsgGameOver db 'GAME OVER',0
-MsgPrompt db 'R=RESTART  ESC=QUIT',0   
+MsgPrompt db 'R=RESTART  ESC=QUIT',0
 
 ;; ==========================================
 ;; MAIN PROGRAM ENTRY
@@ -75,10 +73,9 @@ Start:
     sti                 ; Restore interrupts
 
     call SetTextMode    ; Initialize standard 80x25 text mode
-    call ResetGame      ; Set up initial game state           
-                                                                         
-                                                                         
-                                                                         ;; ==========================================
+    call ResetGame      ; Set up initial game state
+
+;; ==========================================
 ;; CORE GAME LOOP
 ;; ==========================================
 MainLoop:
@@ -121,7 +118,151 @@ Quit:
     call SetTextMode    ; Reset video mode to clear screen
     mov ax, 4C00h       ; DOS interrupt to terminate program
     int 21h
-                                       
+
+;; ==========================================
+;; SETUP & SYSTEM FUNCTIONS
+;; ==========================================
+SetTextMode proc near
+    mov ax, 0003h       ; BIOS func 00h: Set video mode, mode 03h: 80x25 16-color text
+    int 10h
+    ret
+SetTextMode endp
+
+ResetGame proc near
+    ; Reset all core variables to starting defaults
+    mov ExitFlag, 0
+    mov GameState, 0
+    mov PlayerX, 40
+    mov PlayerY, 23
+    mov EnemyDir, 1
+    mov EnemyMoveDelay, 4
+    mov EnemyMoveCounter, 0
+    mov EnemyAnim, 0
+    mov Score, 0
+    mov PrevScore, 0
+
+    call ClearScreen
+    call ClearBullets
+    call InitEnemies    ; Generate the grid of enemies
+    call DrawHUD        ; Draw static text (SCORE:, ESC:QUIT)
+    call DrawEnemies
+    call DrawPlayer
+    call SyncPrevState  ; Sync logic so first frame doesn't erase incorrectly
+    call InitLastTick   ; Reset the timer for frame syncing
+    ret
+ResetGame endp
+
+InitLastTick proc near
+    push ax
+    push cx
+    push dx
+    mov ah, 00h         ; BIOS int 1Ah, func 00h: Get System Time
+    int 1Ah
+    mov LastTick, dx    ; Store lower word of tick count
+    pop dx
+    pop cx
+    pop ax
+    ret
+InitLastTick endp
+
+FrameSync proc near
+    push ax
+    push cx
+    push dx
+    mov cx, 5000        ; Failsafe timeout counter
+FrameSync_Wait:
+    mov ah, 00h         ; Get System Time
+    int 1Ah
+    cmp dx, LastTick    ; Compare current tick with last tick
+    jne FrameSync_Got   ; If different, a tick has passed (18.2 ticks/sec)
+    loop FrameSync_Wait ; Otherwise, keep waiting
+FrameSync_Got:
+    mov LastTick, dx    ; Update LastTick for the next frame
+    pop dx
+    pop cx
+    pop ax
+    ret
+FrameSync endp
+
+;; ==========================================
+;; INPUT HANDLING
+;; ==========================================
+PollInput proc near
+    push ax
+    push bx
+    push dx
+
+PollInput_Check:
+    mov ah, 01h         ; BIOS int 16h, func 01h: Check keystroke status
+    int 16h
+    jz PollInput_Done   ; Zero flag set if no key pressed
+    mov ah, 00h         ; BIOS int 16h, func 00h: Read keystroke (removes from buffer)
+    int 16h
+
+    cmp al, 1Bh         ; Check for ASCII 27 (ESC key)
+    jne PollInput_NotEsc
+    mov ExitFlag, 1     ; Trigger exit
+    jmp PollInput_Done
+
+PollInput_NotEsc:
+    cmp al, 'r'         ; Check lowercase 'r'
+    je PollInput_Restart
+    cmp al, 'R'         ; Check uppercase 'R'
+    je PollInput_Restart
+
+    cmp al, ' '         ; Check Spacebar
+    je PollInput_Fire
+
+    cmp al, 'a'         ; Check A
+    je PollInput_Left
+    cmp al, 'A'
+    je PollInput_Left
+    cmp al, 'd'         ; Check D
+    je PollInput_Right
+    cmp al, 'D'
+    je PollInput_Right
+
+    cmp al, 0           ; Extended keycode (like arrows)? AL will be 0
+    jne PollInput_Check
+    cmp ah, 4Bh         ; Left Arrow scan code
+    je PollInput_Left
+    cmp ah, 4Dh         ; Right Arrow scan code
+    je PollInput_Right
+    jmp PollInput_Check ; Loop back to drain buffer if unknown key
+
+PollInput_Left:
+    mov al, PlayerX
+    cmp al, 0           ; Don't let player go past left edge
+    je PollInput_Done   ; Exit if at edge
+    dec al              ; Move left
+    mov PlayerX, al
+    jmp PollInput_Done  ; Exit after moving
+
+PollInput_Right:
+    mov al, PlayerX
+    cmp al, 79          ; Don't let player go past right edge
+    jae PollInput_Done  ; Exit if at edge  
+    inc al              ; Move right
+    mov PlayerX, al
+    jmp PollInput_Done  ; Exit after moving
+
+PollInput_Fire:
+    call FireBullet     ; Spawn a bullet
+    jmp PollInput_Done  ; Exit after firing
+
+PollInput_Restart:
+    cmp GameState, 0    ; Only allow restart if not actively playing? Wait, logic says:
+    je PollInput_Check  ; Ignore restart if already playing (GameState 0)
+    call ResetGame
+    jmp PollInput_Done
+
+PollInput_Done:
+    pop dx
+    pop bx
+    pop ax
+    ret
+PollInput endp
+
 ;; ==========================================
 ;; BULLET LOGIC
 ;; ==========================================
@@ -141,4 +282,80 @@ ClearBullets_Loop:
     pop cx
     pop ax
     ret
-ClearBullets endp                                      
+ClearBullets endp
+
+FireBullet proc near
+    push ax
+    push bx
+    push cx
+    push di
+
+    mov di, 0
+    mov cx, BulletCount
+FireBullet_Find:
+    cmp byte ptr [BulletActive+di], 0 ; Find the first inactive bullet slot
+    je FireBullet_Use
+    inc di
+    loop FireBullet_Find
+    jmp FireBullet_Done               ; If no slots, can't fire
+
+FireBullet_Use:
+    mov al, PlayerY
+    cmp al, 2           ; Don't fire if too close to the top HUD
+    jbe FireBullet_Done
+    dec al              ; Start bullet 1 row above player
+    mov byte ptr [BulletY+di], al
+    mov al, PlayerX     ; Match bullet X to player X
+    mov byte ptr [BulletX+di], al
+    mov byte ptr [BulletActive+di], 1 ; Mark bullet as active
+
+FireBullet_Done:
+    pop di
+    pop cx
+    pop bx
+    pop ax
+    ret
+FireBullet endp
+
+UpdateBullets proc near
+    push ax
+    push cx
+    push di
+    mov cx, BulletCount
+    mov di, 0
+UpdateBullets_Loop:
+    cmp byte ptr [BulletActive+di], 0 ; Skip inactive bullets
+    je UpdateBullets_Next
+    mov al, byte ptr [BulletY+di]
+    cmp al, 2                         ; Did it hit the top of the screen?
+    jbe UpdateBullets_Kill
+    dec al                            ; Move bullet UP by 1 Y coordinate
+    mov byte ptr [BulletY+di], al
+    jmp UpdateBullets_Next
+UpdateBullets_Kill:
+    mov byte ptr [BulletActive+di], 0 ; Deactivate bullet when off-screen
+UpdateBullets_Next:
+    inc di
+    loop UpdateBullets_Loop
+    pop di
+    pop cx
+    pop ax
+    ret
+UpdateBullets endp
+
+;; ==========================================
+;; ENEMY LOGIC
+;; ==========================================
+InitEnemies proc near
+    push ax
+    push bx
+    push cx
+    push dx
+    push di
+
+    mov di, 0           ; Index in enemy array
+    xor bh, bh          ; bh = Row counter
+InitEnemies_Row:
+    xor bl, bl          ; bl = Col counter
+InitEnemies_Col:
+    mov byte ptr [EnemyAlive+di], 1 ; Mark enemy as alive
