@@ -121,3 +121,68 @@ Quit:
     call SetTextMode    ; Reset video mode to clear screen
     mov ax, 4C00h       ; DOS interrupt to terminate program
     int 21h
+
+;; ==========================================
+;; SETUP & SYSTEM FUNCTIONS
+;; ==========================================
+SetTextMode proc near
+    mov ax, 0003h       ; BIOS func 00h: Set video mode, mode 03h: 80x25 16-color text
+    int 10h
+    ret
+SetTextMode endp
+
+ResetGame proc near
+    ; Reset all core variables to starting defaults
+    mov ExitFlag, 0
+    mov GameState, 0
+    mov PlayerX, 40
+    mov PlayerY, 23
+    mov EnemyDir, 1
+    mov EnemyMoveDelay, 4
+    mov EnemyMoveCounter, 0
+    mov EnemyAnim, 0
+    mov Score, 0
+    mov PrevScore, 0
+
+    call ClearScreen
+    call ClearBullets
+    call InitEnemies    ; Generate the grid of enemies
+    call DrawHUD        ; Draw static text (SCORE:, ESC:QUIT)
+    call DrawEnemies
+    call DrawPlayer
+    call SyncPrevState  ; Sync logic so first frame doesn't erase incorrectly
+    call InitLastTick   ; Reset the timer for frame syncing
+    ret
+ResetGame endp
+
+InitLastTick proc near
+    push ax
+    push cx
+    push dx
+    mov ah, 00h         ; BIOS int 1Ah, func 00h: Get System Time
+    int 1Ah
+    mov LastTick, dx    ; Store lower word of tick count
+    pop dx
+    pop cx
+    pop ax
+    ret
+InitLastTick endp
+
+FrameSync proc near
+    push ax
+    push cx
+    push dx
+    mov cx, 5000        ; Failsafe timeout counter
+FrameSync_Wait:
+    mov ah, 00h         ; Get System Time
+    int 1Ah
+    cmp dx, LastTick    ; Compare current tick with last tick
+    jne FrameSync_Got   ; If different, a tick has passed (18.2 ticks/sec)
+    loop FrameSync_Wait ; Otherwise, keep waiting
+FrameSync_Got:
+    mov LastTick, dx    ; Update LastTick for the next frame
+    pop dx
+    pop cx
+    pop ax
+    ret
+FrameSync endp
