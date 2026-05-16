@@ -358,4 +358,36 @@ InitEnemies proc near
 InitEnemies_Row:
     xor bl, bl          ; bl = Col counter
 InitEnemies_Col:
-    mov byte ptr [EnemyAlive+di], 1 ; Mark enemy as alive
+    mov byte ptr [EnemyAlive+di], 1 ; Mark enemy as alive  
+    
+; Calculate Enemy X: (Col * 6) + 10
+    mov al, bl
+    mov ah, 0
+    mov cl, 6
+    mul cl
+    add ax, 10
+    mov byte ptr [EnemyX+di], al
+
+    ; Calculate Enemy Y: (Row * 2) + 3
+    mov al, bh
+    mov ah, 0
+    mov cl, 2
+    mul cl
+    add ax, 3
+    mov byte ptr [EnemyY+di], al
+
+    inc di
+    inc bl
+    cmp bl, EnemyCols
+    jb InitEnemies_Col  ; Loop columns
+    inc bh
+    cmp bh, EnemyRows
+    jb InitEnemies_Row  ; Loop rows
+
+    pop di
+    pop dx
+    pop cx
+    pop bx
+    pop ax
+    ret
+InitEnemies endp
