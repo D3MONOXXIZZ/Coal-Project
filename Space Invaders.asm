@@ -390,4 +390,47 @@ InitEnemies_Col:
     pop bx
     pop ax
     ret
-InitEnemies endp
+InitEnemies endp 
+UpdateEnemies proc near
+    push ax
+    push bx
+    push cx
+    push dx
+    push si
+
+    ; Frame delay logic to make enemies move slower than bullets
+    mov ax, EnemyMoveCounter
+    inc ax
+    mov EnemyMoveCounter, ax
+    cmp ax, EnemyMoveDelay
+    jb UpdateEnemies_Done       ; If counter < delay, skip moving this frame
+    mov EnemyMoveCounter, 0     ; Reset counter
+
+    call GetEnemyBounds         ; Find the leftmost (dh) and rightmost (dl) active enemy edges
+
+    mov al, EnemyDir
+    cmp al, 1
+    jne UpdateEnemies_CheckLeft ; If not moving right, check left
+    
+    ; --- Moving Right ---
+    cmp dl, 79                  ; Has rightmost edge hit screen bound (79)?
+    jb UpdateEnemies_MoveHoriz  ; If not, continue horizontal move
+    mov EnemyDir, 0FFh          ; If hit, change direction to Left (-1)
+    call DropEnemies            ; Move all enemies down one row
+    call ToggleEnemyAnim        ; Swap sprite frame
+    jmp UpdateEnemies_Done
+
+UpdateEnemies_CheckLeft:
+    ; --- Moving Left ---
+    cmp al, 0FFh
+    jne UpdateEnemies_MoveHoriz
+    cmp dh, 0                   ; Has leftmost edge hit screen bound (0)?
+    ja UpdateEnemies_MoveHoriz  ; If not, continue horizontal move
+    mov EnemyDir, 1             ; If hit, change direction to Right (1)
+    call DropEnemies
+    call ToggleEnemyAnim
+    jmp UpdateEnemies_Done
+
+UpdateEnemies_MoveHoriz:
+    call MoveEnemiesHoriz       ; Apply X movement to all enemies
+    call ToggleEnemyAnim        ; Swap sprite frame for walking effect
