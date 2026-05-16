@@ -37,7 +37,8 @@ EnemyCount equ EnemyRows*EnemyCols ; Total 55 enemies
 EnemyAlive db EnemyCount dup (0)   ; Array: 1 if alive, 0 if destroyed
 EnemyX db EnemyCount dup (0)       ; Array: Enemy X positions
 EnemyY db EnemyCount dup (0)       ; Array: Enemy Y positions
-PrevEnemyAlive db EnemyCount dup (0) ; For erasing old frames 
+PrevEnemyAlive db EnemyCount dup (0) ; For erasing old frames (anti-flicker)
+
 PrevEnemyX db EnemyCount dup (0)
 PrevEnemyY db EnemyCount dup (0)
 
