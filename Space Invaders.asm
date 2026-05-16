@@ -492,3 +492,30 @@ ToggleEnemyAnim proc near
     pop ax
     ret
 ToggleEnemyAnim endp
+DropEnemies proc near
+    ; Moves all alive enemies down by 1 Y unit
+    push ax
+    push cx
+    push si
+    mov cx, EnemyCount
+    mov si, 0
+DropEnemies_Loop:
+    cmp byte ptr [EnemyAlive+si], 0
+    je DropEnemies_Next
+    mov al, byte ptr [EnemyY+si]
+    inc al
+    mov byte ptr [EnemyY+si], al
+DropEnemies_Next:
+    inc si
+    loop DropEnemies_Loop
+    pop si
+    pop cx
+    pop ax
+    ret
+DropEnemies endp
+
+MoveEnemiesHoriz proc near
+    ; Adds EnemyDir (1 or -1) to every alive enemy's X coordinate
+    push ax
+    push cx
+    push si
