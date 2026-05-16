@@ -206,3 +206,48 @@ PollInput_Check:
     jne PollInput_NotEsc
     mov ExitFlag, 1     ; Trigger exit
     jmp PollInput_Done
+PollInput_NotEsc:
+    cmp al, 'r'         ; Check lowercase 'r'
+    je PollInput_Restart
+    cmp al, 'R'         ; Check uppercase 'R'
+    je PollInput_Restart
+
+    cmp al, ' '         ; Check Spacebar
+    je PollInput_Fire
+
+    cmp al, 'a'         ; Check A
+    je PollInput_Left
+    cmp al, 'A'
+    je PollInput_Left
+    cmp al, 'd'         ; Check D
+    je PollInput_Right
+    cmp al, 'D'
+    je PollInput_Right
+
+    cmp al, 0           ; Extended keycode (like arrows)? AL will be 0
+    jne PollInput_Check
+    cmp ah, 4Bh         ; Left Arrow scan code
+    je PollInput_Left
+    cmp ah, 4Dh         ; Right Arrow scan code
+    je PollInput_Right
+    jmp PollInput_Check ; Loop back to drain buffer if unknown key
+
+PollInput_Left:
+    mov al, PlayerX
+    cmp al, 0           ; Don't let player go past left edge
+    je PollInput_Check
+    dec al              ; Move left
+    mov PlayerX, al
+    jmp PollInput_Check
+
+PollInput_Right:
+    mov al, PlayerX
+    cmp al, 79          ; Don't let player go past right edge
+    jae PollInput_Check
+    inc al              ; Move right
+    mov PlayerX, al
+    jmp PollInput_Check
+
+PollInput_Fire:
+    call FireBullet     ; Spawn a bullet
+    jmp PollInput_Check
