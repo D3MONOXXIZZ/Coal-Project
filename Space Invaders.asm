@@ -284,4 +284,37 @@ ClearBullets_Loop:
     pop cx
     pop ax
     ret
-ClearBullets endp
+ClearBullets endp 
+
+FireBullet proc near
+    push ax
+    push bx
+    push cx
+    push di
+
+    mov di, 0
+    mov cx, BulletCount
+FireBullet_Find:
+    cmp byte ptr [BulletActive+di], 0 ; Find the first inactive bullet slot
+    je FireBullet_Use
+    inc di
+    loop FireBullet_Find
+    jmp FireBullet_Done               ; If no slots, can't fire
+
+FireBullet_Use:
+    mov al, PlayerY
+    cmp al, 2           ; Don't fire if too close to the top HUD
+    jbe FireBullet_Done
+    dec al              ; Start bullet 1 row above player
+    mov byte ptr [BulletY+di], al
+    mov al, PlayerX     ; Match bullet X to player X
+    mov byte ptr [BulletX+di], al
+    mov byte ptr [BulletActive+di], 1 ; Mark bullet as active
+
+FireBullet_Done:
+    pop di
+    pop cx
+    pop bx
+    pop ax
+    ret
+FireBullet endp
