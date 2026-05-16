@@ -37,7 +37,7 @@ EnemyCount equ EnemyRows*EnemyCols ; Total 55 enemies
 EnemyAlive db EnemyCount dup (0)   ; Array: 1 if alive, 0 if destroyed
 EnemyX db EnemyCount dup (0)       ; Array: Enemy X positions
 EnemyY db EnemyCount dup (0)       ; Array: Enemy Y positions
-PrevEnemyAlive db EnemyCount dup (0) ; For erasing old frames (anti-flicker)
+PrevEnemyAlive db EnemyCount dup (0) ; For erasing old frames 
 PrevEnemyX db EnemyCount dup (0)
 PrevEnemyY db EnemyCount dup (0)
 
@@ -78,7 +78,7 @@ Start:
     call ResetGame      ; Set up initial game state           
                                                                          
                                                                          
-                                                                         ;; ==========================================
+;; ==========================================
 ;; CORE GAME LOOP
 ;; ==========================================
 MainLoop:
@@ -252,7 +252,7 @@ PollInput_Fire:
     call FireBullet     ; Spawn a bullet
     jmp PollInput_Check
                                              
-                                             PollInput_Restart:
+PollInput_Restart:
     cmp GameState, 0    ; Only allow restart if not actively playing? Wait, logic says:
     je PollInput_Check  ; Ignore restart if already playing (GameState 0)
     call ResetGame
