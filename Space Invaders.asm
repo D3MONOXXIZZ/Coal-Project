@@ -518,4 +518,29 @@ MoveEnemiesHoriz proc near
     ; Adds EnemyDir (1 or -1) to every alive enemy's X coordinate
     push ax
     push cx
-    push si
+    push si   
+    
+mov al, EnemyDir
+    mov cx, EnemyCount
+    mov si, 0
+MoveEnemiesHoriz_Loop:
+    cmp byte ptr [EnemyAlive+si], 0
+    je MoveEnemiesHoriz_Next
+    mov ah, byte ptr [EnemyX+si]
+    cmp al, 1
+    jne MoveEnemiesHoriz_Left
+    inc ah                      ; Move Right
+    jmp MoveEnemiesHoriz_Store
+MoveEnemiesHoriz_Left:
+    dec ah                      ; Move Left
+MoveEnemiesHoriz_Store:
+    mov byte ptr [EnemyX+si], ah
+MoveEnemiesHoriz_Next:
+    inc si
+    loop MoveEnemiesHoriz_Loop
+
+    pop si
+    pop cx
+    pop ax
+    ret
+MoveEnemiesHoriz endp
