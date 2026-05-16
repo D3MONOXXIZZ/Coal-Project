@@ -55,4 +55,25 @@ HudQuit db 'ESC:QUIT  R:RESTART',0
 
 MsgWin db 'YOU WIN!',0
 MsgGameOver db 'GAME OVER',0
-MsgPrompt db 'R=RESTART  ESC=QUIT',0
+MsgPrompt db 'R=RESTART  ESC=QUIT',0   
+
+;; ==========================================
+;; MAIN PROGRAM ENTRY
+;; ==========================================
+Start:
+    ; Set up Data Segment (DS) and Extra Segment (ES) to match Code Segment (CS)
+    push cs
+    pop ds
+    push cs
+    pop es
+    
+    ; Set up the stack safely
+    cli                 ; Clear interrupts while modifying stack
+    push cs
+    pop ss
+    mov sp, 0FFFEh      ; Set stack pointer to top of segment
+    sti                 ; Restore interrupts
+
+    call SetTextMode    ; Initialize standard 80x25 text mode
+    call ResetGame      ; Set up initial game state           
+                            
