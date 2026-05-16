@@ -464,4 +464,31 @@ GetEnemyBounds_Loop:
     ; Check leftmost
     cmp al, dh
     jae GetEnemyBounds_CheckMax
-    mov dh, al          ; Update leftmost edge
+    mov dh, al          ; Update leftmost edge     
+    
+    GetEnemyBounds_CheckMax:
+    ; Check rightmost (requires adding sprite width)
+    add al, (EnemySpriteW-1) 
+    cmp al, dl
+    jbe GetEnemyBounds_Next
+    mov dl, al          ; Update rightmost edge
+    
+GetEnemyBounds_Next:
+    inc si
+    loop GetEnemyBounds_Loop
+
+    pop si
+    pop cx
+    pop bx
+    pop ax
+    ret
+GetEnemyBounds endp
+
+ToggleEnemyAnim proc near
+    push ax
+    mov al, EnemyAnim
+    xor al, 1           ; XOR with 1 flips between 0 and 1
+    mov EnemyAnim, al
+    pop ax
+    ret
+ToggleEnemyAnim endp
