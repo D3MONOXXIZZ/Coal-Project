@@ -263,4 +263,25 @@ PollInput_Done:
     pop bx
     pop ax
     ret
-PollInput endp
+PollInput endp   
+
+;; ==========================================
+;; BULLET LOGIC
+;; ==========================================
+ClearBullets proc near
+    push ax
+    push cx
+    push di
+    mov cx, BulletCount ; Loop through all bullets
+    mov di, 0
+ClearBullets_Loop:
+    mov byte ptr [BulletActive+di], 0 ; Deactivate bullet
+    mov byte ptr [BulletX+di], 0
+    mov byte ptr [BulletY+di], 0
+    inc di
+    loop ClearBullets_Loop
+    pop di
+    pop cx
+    pop ax
+    ret
+ClearBullets endp
