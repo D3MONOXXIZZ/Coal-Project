@@ -433,4 +433,35 @@ UpdateEnemies_CheckLeft:
 
 UpdateEnemies_MoveHoriz:
     call MoveEnemiesHoriz       ; Apply X movement to all enemies
-    call ToggleEnemyAnim        ; Swap sprite frame for walking effect
+    call ToggleEnemyAnim        ; Swap sprite frame for walking effect 
+    
+UpdateEnemies_Done:
+    pop si
+    pop dx
+    pop cx
+    pop bx
+    pop ax
+    ret
+UpdateEnemies endp
+
+GetEnemyBounds proc near
+    ; Finds the exact bounding box of the active enemy swarm
+    ; Returns: dh = Leftmost X coordinate, dl = Rightmost X coordinate
+    push ax
+    push bx
+    push cx
+    push si
+
+    mov dh, 79          ; Start Left bounds high
+    mov dl, 0           ; Start Right bounds low
+    mov cx, EnemyCount
+    mov si, 0
+GetEnemyBounds_Loop:
+    cmp byte ptr [EnemyAlive+si], 0 ; Ignore dead enemies
+    je GetEnemyBounds_Next
+    mov al, byte ptr [EnemyX+si]
+    
+    ; Check leftmost
+    cmp al, dh
+    jae GetEnemyBounds_CheckMax
+    mov dh, al          ; Update leftmost edge
