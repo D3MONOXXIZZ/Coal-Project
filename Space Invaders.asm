@@ -251,3 +251,16 @@ PollInput_Right:
 PollInput_Fire:
     call FireBullet     ; Spawn a bullet
     jmp PollInput_Check
+                                             
+                                             PollInput_Restart:
+    cmp GameState, 0    ; Only allow restart if not actively playing? Wait, logic says:
+    je PollInput_Check  ; Ignore restart if already playing (GameState 0)
+    call ResetGame
+    jmp PollInput_Done
+
+PollInput_Done:
+    pop dx
+    pop bx
+    pop ax
+    ret
+PollInput endp
