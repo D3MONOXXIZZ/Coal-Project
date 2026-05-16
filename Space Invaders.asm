@@ -317,4 +317,30 @@ FireBullet_Done:
     pop bx
     pop ax
     ret
-FireBullet endp
+FireBullet endp    
+
+UpdateBullets proc near
+    push ax
+    push cx
+    push di
+    mov cx, BulletCount
+    mov di, 0
+UpdateBullets_Loop:
+    cmp byte ptr [BulletActive+di], 0 ; Skip inactive bullets
+    je UpdateBullets_Next
+    mov al, byte ptr [BulletY+di]
+    cmp al, 2                         ; Did it hit the top of the screen?
+    jbe UpdateBullets_Kill
+    dec al                            ; Move bullet UP by 1 Y coordinate
+    mov byte ptr [BulletY+di], al
+    jmp UpdateBullets_Next
+UpdateBullets_Kill:
+    mov byte ptr [BulletActive+di], 0 ; Deactivate bullet when off-screen
+UpdateBullets_Next:
+    inc di
+    loop UpdateBullets_Loop
+    pop di
+    pop cx
+    pop ax
+    ret
+UpdateBullets endp
