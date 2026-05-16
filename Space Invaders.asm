@@ -185,4 +185,24 @@ FrameSync_Got:
     pop cx
     pop ax
     ret
-FrameSync endp
+FrameSync endp              
+
+;; ==========================================
+;; INPUT HANDLING
+;; ==========================================
+PollInput proc near
+    push ax
+    push bx
+    push dx
+
+PollInput_Check:
+    mov ah, 01h         ; BIOS int 16h, func 01h: Check keystroke status
+    int 16h
+    jz PollInput_Done   ; Zero flag set if no key pressed
+    mov ah, 00h         ; BIOS int 16h, func 00h: Read keystroke (removes from buffer)
+    int 16h
+
+    cmp al, 1Bh         ; Check for ASCII 27 (ESC key)
+    jne PollInput_NotEsc
+    mov ExitFlag, 1     ; Trigger exit
+    jmp PollInput_Done
