@@ -76,4 +76,48 @@ Start:
 
     call SetTextMode    ; Initialize standard 80x25 text mode
     call ResetGame      ; Set up initial game state           
-                            
+                                                                         
+                                                                         
+                                                                         ;; ==========================================
+;; CORE GAME LOOP
+;; ==========================================
+MainLoop:
+    cmp ExitFlag, 0     ; Check if ESC was pressed
+    jne Quit            ; If yes, exit to DOS
+
+    cmp GameState, 0    ; Check if we are actively playing
+    jne NotPlaying      ; If not (Win/Loss), jump to handle those screens
+
+    ; -- Active Gameplay Loop --
+    call FrameSync           ; Lock frame rate using BIOS timer
+    call PollInput           ; Read keyboard input
+    call ErasePrevEntities   ; Erase old sprites to prevent trails/flicker
+    call UpdateBullets       ; Move bullets up
+    call UpdateEnemies       ; Move enemies left/right/down
+    call CheckCollisions     ; Check if bullets hit enemies
+    call CheckWinLose        ; Check if player won or enemies reached the bottom
+    
+    cmp GameState, 0         ; Did state change after checks?
+    jne MainLoop             ; If yes, restart loop to trigger win/lose screens
+    
+    call DrawScoreIfChanged  ; Update HUD
+    call DrawEnemies         ; Render enemies at new positions
+    call DrawBullets         ; Render bullets at new positions
+    call DrawPlayer          ; Render player
+    call SyncPrevState       ; Save current positions for next frame's erasure
+    jmp MainLoop             ; Repeat
+
+NotPlaying:
+    cmp GameState, 1    ; Is state 1 (Win)?
+    jne ShowLose        ; If not, it must be 2 (Game Over)
+    call ShowWinScreen  ; Display Win Screen
+    jmp MainLoop
+
+ShowLose:
+    call ShowGameOverScreen ; Display Game Over Screen
+    jmp MainLoop
+
+Quit:
+    call SetTextMode    ; Reset video mode to clear screen
+    mov ax, 4C00h       ; DOS interrupt to terminate program
+    int 21h
